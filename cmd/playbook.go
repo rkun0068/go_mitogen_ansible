@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+	"os/exec"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/spf13/cobra"
+
+	"github.com/rkun0068/go_mitogen_ansible/output"
 )
 
 var (
@@ -118,6 +122,21 @@ func readHostsFile(filename string) ([]string, error) {
 // Execute the command
 func executeCommand(command string, host string) error {
 	logFile, logger, err := output.CreateLogFile(host)
+	if err != nil {
+		return fmt.Errorf("func executeCommand error: %v", err)
+	}
+
+	defer output.CloseLogFile(logFile)
+
+	//	execute command
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdout = logger.Writer()
+	cmd.Stderr = logger.Writer()
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("func executeCommand error: %v", err)
+	}
 
 	return nil
 }
